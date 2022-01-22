@@ -1,4 +1,4 @@
-exports.AMPAPI = function (baseUri) {
+const AMPAPI = function (baseUri) {
     const request = require('request');
     var self = this;
     this.baseUri = baseUri;
@@ -76,4 +76,36 @@ exports.AMPAPI = function (baseUri) {
             });
         });
     }
+    this.InstanceAPI = function (instanceId, username, password, token="", rememberme=false) {
+        return new Promise((resolve, reject) => {
+            var API = new AMPAPI(`${this.dataSource}/ADSModule/Servers/${instanceId}/`);
+            API.initAsync().then((APIInitOK) => {
+              if (!APIInitOK) {
+                reject(APIInitOK)
+                return;
+              }
+              API.Core.LoginAsync(username, password, token, rememberme).then((loginResult) => {
+                if (loginResult.success)
+                {
+                    API.sessionId = loginResult.sessionID;
+                    API.initAsync().then(async (APIInitOK) => {
+                        if (!APIInitOK) {
+                            reject(APIInitOK)
+                            return;
+                        }
+                        resolve(API);
+                        return;
+                    });
+                }
+                else
+                {
+                  reject(loginResult);
+                  return;
+                }
+              }).catch(reject);
+            }).catch(reject); 
+        })
+    }
 };
+
+exports.AMPAPI = AMPAPI;
