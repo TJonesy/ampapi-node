@@ -76,9 +76,9 @@ const AMPAPI = function (baseUri) {
             });
         });
     }
-    this.InstanceAPI = function (instanceId, sessionID) {
+    this.InstanceAPI = function (instanceId) {
         return new Promise((resolve, reject) => {
-            this.ADSModule.ManageInstanceAsync(instanceId, sessionID).then(result => {
+            this.ADSModule.ManageInstanceAsync(instanceId, this.sessionId).then(result => {
                 if(!result.Status) {
                     reject("Failed to login");
                     return;
