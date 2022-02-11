@@ -76,24 +76,40 @@ const AMPAPI = function (baseUri) {
             });
         });
     }
-    this.InstanceAPI = function (instanceId) {
+    this.InstanceAPI = function (instanceId, username) {
         return new Promise((resolve, reject) => {
             this.ADSModule.ManageInstanceAsync(instanceId, this.sessionId).then(result => {
                 if(!result.Status) {
-                    reject("Failed to login");
+                    return reject(result);
+                }
+                const token = result.Result;
+                var API = new AMPAPI(`${this.dataSource}/ADSModule/Servers/${instanceId}/`);
+                API.initAsync().then((APIInitOK) => {
+                if (!APIInitOK) {
+                    reject(APIInitOK)
                     return;
                 }
-                var API = new AMPAPI(`${this.dataSource}/ADSModule/Servers/${instanceId}/`);
-                API.sessionId = result.Result;
-                API.initAsync().then(async (APIInitOK) => {
-                    if (!APIInitOK) {
-                        reject(APIInitOK)
-                        return;
+                API.Core.LoginAsync(username, '', token, false).then((loginResult) => {
+                    if (loginResult.success)
+                    {
+                        API.sessionId = loginResult.sessionID;
+                        API.initAsync().then(async (APIInitOK) => {
+                            if (!APIInitOK) {
+                                reject(APIInitOK)
+                                return;
+                            }
+                            resolve(API);
+                            return;
+                        });
                     }
-                    resolve(API);
+                    else
+                    {
+                    reject(loginResult);
                     return;
-                }).catch(result => reject(result));
-            }).catch(result => reject(result));
+                    }
+                }).catch(reject);
+                }).catch(reject); 
+            }).catch(reject);
         });
     }
 };
