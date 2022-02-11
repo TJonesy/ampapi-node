@@ -76,35 +76,25 @@ const AMPAPI = function (baseUri) {
             });
         });
     }
-    this.InstanceAPI = function (instanceId, username, password, token="", rememberme=false) {
+    this.InstanceAPI = function (instanceId, sessionID) {
         return new Promise((resolve, reject) => {
-            var API = new AMPAPI(`${this.dataSource}/ADSModule/Servers/${instanceId}/`);
-            API.initAsync().then((APIInitOK) => {
-              if (!APIInitOK) {
-                reject(APIInitOK)
-                return;
-              }
-              API.Core.LoginAsync(username, password, token, rememberme).then((loginResult) => {
-                if (loginResult.success)
-                {
-                    API.sessionId = loginResult.sessionID;
-                    API.initAsync().then(async (APIInitOK) => {
-                        if (!APIInitOK) {
-                            reject(APIInitOK)
-                            return;
-                        }
-                        resolve(API);
+            this.ADSModule.ManageInstanceAsync(instanceId, sessionID).then(result => {
+                if(!result.Status) {
+                    reject("Failed to login");
+                    return;
+                }
+                var API = new AMPAPI(`${this.dataSource}/ADSModule/Servers/${instanceId}/`);
+                API.sessionId = result.Result;
+                API.initAsync().then(async (APIInitOK) => {
+                    if (!APIInitOK) {
+                        reject(APIInitOK)
                         return;
-                    });
-                }
-                else
-                {
-                  reject(loginResult);
-                  return;
-                }
-              }).catch(reject);
-            }).catch(reject); 
-        })
+                    }
+                    resolve(API);
+                    return;
+                }).catch(result => reject(result));
+            }).catch(result => reject(result));
+        });
     }
 };
 
